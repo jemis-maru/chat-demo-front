@@ -4,6 +4,9 @@
       <div class="card-body">
         <div class="card-title">
           <h3>Chat Room</h3>
+          <div v-if="isUserJoined" class="leave-container">
+            <button type="button" @click="leaveRoom" class="btn btn-danger">Leave room</button>
+          </div>
         </div>
         <div class="card-body message-body" v-if="messages.length > 0">
           <div class="message-container" :class="msg.socket_id == socket.id && 'sender-msg'" v-for="(msg, index) in messages" :key="index">
@@ -42,7 +45,7 @@ import io from "socket.io-client";
 import { ref } from "vue";
 
 
-const socket = ref(io("localhost:4000", { transports: ["websocket"] }));
+const socket = ref(null);
 
 const user = ref("");
 const message = ref("");
@@ -60,14 +63,26 @@ const sendMessage = (e) => {
 }
 
 const pingServer = () => {
+  socket.value = io("localhost:4000", { transports: ["websocket"] });
   socket.value.on("MESSAGE", (data) => {
     messages.value = [...messages.value, data];
   });
   isUserJoined.value = true;
 }
+
+const leaveRoom = () => {
+  socket.value.disconnect();
+  user.value = "";
+  message.value = "";
+  messages.value = [];
+  isUserJoined.value = false;
+}
 </script>
 
 <style scoped>
+::-webkit-scrollbar {
+  display: none;
+}
 .wrapper {
   background: #e8eaff;
   min-height: 100vh;
@@ -75,6 +90,16 @@ const pingServer = () => {
 
 .card-title {
   margin-bottom: 30px;
+  padding: 20px;
+  background: #153f5e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leave-container {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .message-body {
@@ -87,10 +112,8 @@ const pingServer = () => {
 
 .card-title h3 {
   text-align: center;
-  background: #153f5e;
   color: #fff;
   text-transform: uppercase;
-  padding: 20px;
 }
 
 .form-group {
@@ -134,13 +157,20 @@ const pingServer = () => {
 }
 
 .btn {
-  background: #35d87a;
   color: #fff;
   border: none;
   outline: none;
   cursor: pointer;
   padding: 10px 30px;
   border-radius: 50px;
+}
+
+.btn.btn-success {
+  background: #35d87a;
+}
+
+.btn.btn-danger {
+  background: #c5243f;
 }
 
 .message-container {

@@ -5,7 +5,7 @@
         <div class="card-title">
           <h3>Chat Room</h3>
         </div>
-        <div class="card-body message-body">
+        <div class="card-body message-body" v-if="messages.length > 0">
           <div class="message-container" :class="msg.socket_id == socket.id && 'sender-msg'" v-for="(msg, index) in messages" :key="index">
             <div class="messages">
               <p class="username">{{ msg.user }}</p>
@@ -35,36 +35,36 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import io from "socket.io-client";
-export default {
-  data() {
-    return {
-      user: "",
-      message: "",
-      messages: [],
-      socket: io("localhost:4000", { transports: ["websocket"] }),
-      isUserJoined: false,
-    };
-  },
-  methods: {
-    sendMessage(e) {
-      e.preventDefault();
-      this.socket.emit("SEND_MESSAGE", {
-        user: this.user,
-        message: this.message,
-        socket_id: this.socket.id
-      });
-      this.message = "";
-    },
-    pingServer() {
-      this.socket.on("MESSAGE", (data) => {
-        this.messages = [...this.messages, data];
-      });
-      this.isUserJoined = true;
-    }
-  },
-};
+
+// vue imports
+import { ref } from "vue";
+
+
+const socket = ref(io("localhost:4000", { transports: ["websocket"] }));
+
+const user = ref("");
+const message = ref("");
+const messages = ref([]);
+const isUserJoined = ref(false);
+
+const sendMessage = (e) => {
+  e.preventDefault();
+  socket.value.emit("SEND_MESSAGE", {
+    user: user.value,
+    message: message.value,
+    socket_id: socket.value.id,
+  });
+  message.value = "";
+}
+
+const pingServer = () => {
+  socket.value.on("MESSAGE", (data) => {
+    messages.value = [...messages.value, data];
+  });
+  isUserJoined.value = true;
+}
 </script>
 
 <style scoped>
@@ -81,6 +81,8 @@ export default {
   padding: 20px;
   max-width: 700px;
   margin: auto;
+  max-height: 60vh;
+  overflow-y: scroll;
 }
 
 .card-title h3 {
